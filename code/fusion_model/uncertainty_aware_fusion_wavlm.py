@@ -170,8 +170,8 @@ def load_smile_data(drop_correlated = True, corr_thr = 0.85):
     print( '---------------------- -------------- ----------------------')
     print(len(columns))
     print( '---------------------- -------------- ----------------------')
-    df_debug = df[df['id'].isin([id_to_debug])]
-    print(df_debug[['id', 'date']])
+    #df_debug = df[df['id'].isin([id_to_debug])]
+    #print(df_debug[['id', 'date']])
     return features, df["label"], df["id"], columns, df["id_date"]
 
 def load_qbf_data(drop_correlated = False, corr_thr = 0.85, feature_files=[AUDIO_FEATURES_FILE]):
@@ -672,6 +672,7 @@ def evaluate_fusion_model(fusion_model, dataloader, prediction_models, config, s
     all_pred_scores = [[] for i in range(NUM_MODELS)] #unimodal prediction scores
     all_final_predictions = [] #fusion predictions
     uncertain_indices = [] #indices where the 95% CI contains 0.5
+    all_final_std = [] #std of the fusion predictions
     loss = 0 #average loss
     n_samples = 0 #number of examples in the dataloader
 
@@ -717,6 +718,7 @@ def evaluate_fusion_model(fusion_model, dataloader, prediction_models, config, s
         
         all_final_predictions.extend(final_pred_scores.cpu().numpy())
         uncertain_indices.extend(index_mask.cpu().numpy())
+        all_final_std.extend(standard_error.cpu().numpy())
 
     #evaluate
     uncertain_indices = np.asarray(uncertain_indices).flatten()
@@ -733,7 +735,8 @@ def evaluate_fusion_model(fusion_model, dataloader, prediction_models, config, s
                     'all_labels': all_labels,
                     'all_final_predictions': all_final_predictions,
                     'all_pred_scores': all_pred_scores,
-                    'uncertain_indices': uncertain_indices
+                    'uncertain_indices': uncertain_indices,
+                    'all_final_std': all_final_std,
                 },
                 f
             )
@@ -749,78 +752,6 @@ def evaluate_fusion_model(fusion_model, dataloader, prediction_models, config, s
 
     return metrics
 
-'''
---batch_size=1024 --dropout_prob=0.495989214406461 --gamma=0.57143922410234 --hidden_dim=512 
---increase_variance=no --last_hidden_dim=128 --learning_rate=0.020724443604128343 
---minority_oversample=no --model_subset_choice=0 --momentum=0.6897821582954526 
---num_epochs=164 --optimizer=SGD --patience=5 --query_dim=64 --random_state=357 
---sampler=SMOTE --scheduler=step --seed=423 --step_size=5 --train_random_noise=no 
---uncertainty_weight=81.81790352752515 --use_scheduler=no --validation_random_noise=no
-'''
-'''@click.command()
-
-@click.option("--learning_rate", default=0.45757428074397344, help="Learning rate for classifier")
-@click.option("--dropout_prob", default=0.4996629497540713)
-@click.option("--num_buckets", default=100, help="Options: 5, 10, 20, 50, 100")
-@click.option("--num_trials", default=30, help="Options: 100-1000")
-@click.option("--uncertainty_weight", default=34.86807213565989)
-@click.option("--minority_oversample", default='yes', help="Options: 'yes', 'no'")
-@click.option("--sampler", default='SMOTETomek', help="Options:SMOTE, SMOTENC, SVMSMOTE, ADASYN, BorderlineSMOTE, KMeansSMOTE, SMOTEN, RandomOverSampler, SMOTEENN, SMOTETomek")
-@click.option("--train_random_noise", default="no", help="Options: yes, no")
-@click.option("--validation_random_noise", default="no", help="Options: yes, no")
-@click.option("--increase_variance", default="no", help="Options: yes, no")
-@click.option("--temperature", default=0.05, help="Float between 0 and 1")
-@click.option("--noise_variance", default=0.01, help="Float between 0 and 1")
-@click.option("--random_state", default=357, help="Random state for classifier")
-@click.option("--model_subset_choice", default=0, help="4 possible choices. See Constants.py")
-@click.option("--seed", default=423, help="Seed for random")
-@click.option("--batch_size", default=1024)
-@click.option("--num_epochs", default=265)
-@click.option("--hidden_dim", default=16)
-@click.option("--query_dim", default=128)
-@click.option("--last_hidden_dim", default=128)
-@click.option("--optimizer", default="SGD", help="Options: SGD, AdamW, RMSprop")
-@click.option("--beta1", default=0.9)
-@click.option("--beta2", default=0.999)
-@click.option("--weight_decay", default=0.0001)
-@click.option("--momentum", default=0.3963474067694496)
-@click.option("--use_scheduler", default='no', help="Options: yes, no")
-@click.option("--scheduler", default='step', help="Options: step, reduce")
-@click.option("--step_size", default=18)
-@click.option("--gamma", default=0.5193482887239524)
-@click.option("--patience", default=5)
-'''
-# @click.command()
-# @click.option("--learning_rate", default=0.657507141618884, help="Learning rate for classifier")
-# @click.option("--dropout_prob", default=0.21200409433136289)
-# @click.option("--num_buckets", default=20, help="Options: 5, 10, 20, 50, 100")
-# @click.option("--num_trials", default=30, help="Options: 100-1000")
-# @click.option("--uncertainty_weight", default=55.80405689012051)
-# @click.option("--minority_oversample", default="no", help="Options: 'yes', 'no'")
-# @click.option("--sampler", default="ADASYN", help="Options: SMOTE, SMOTENC, SVMSMOTE, ADASYN, BorderlineSMOTE, KMeansSMOTE, SMOTEN, RandomOverSampler, SMOTEENN, SMOTETomek")
-# @click.option("--train_random_noise", default="no", help="Options: yes, no")
-# @click.option("--validation_random_noise", default="no", help="Options: yes, no")
-# @click.option("--increase_variance", default="no", help="Options: yes, no")
-# @click.option("--temperature", default=0.05, help="Float between 0 and 1")
-# @click.option("--noise_variance", default=0.01, help="Float between 0 and 1")
-# @click.option("--random_state", default=357, help="Random state for classifier")
-# @click.option("--model_subset_choice", default=0, help="4 possible choices. See Constants.py")
-# @click.option("--seed", default=423, help="Seed for random")
-# @click.option("--batch_size", default=512)
-# @click.option("--num_epochs", default=236)
-# @click.option("--hidden_dim", default=4)
-# @click.option("--query_dim", default=128)
-# @click.option("--last_hidden_dim", default=128)
-# @click.option("--optimizer", default="SGD", help="Options: SGD, AdamW, RMSprop")
-# @click.option("--beta1", default=0.9)
-# @click.option("--beta2", default=0.999)
-# @click.option("--weight_decay", default=0.0001)
-# @click.option("--momentum", default=0.2084541438815856)
-# @click.option("--use_scheduler", default="no", help="Options: yes, no")
-# @click.option("--scheduler", default="reduce", help="Options: step, reduce")
-# @click.option("--step_size", default=16)
-# @click.option("--gamma", default=0.764715407297431)
-# @click.option("--patience", default=17)
 
 @click.command()
 @click.option("--learning_rate", default=0.8107863535745978, help="Learning rate for classifier")
