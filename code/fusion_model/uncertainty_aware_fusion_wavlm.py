@@ -476,7 +476,7 @@ class CrossAttention(nn.Module):
             q = self.drop(q)
 
             key = self.form_key(features[i])
-            key = self.drop(q)
+            key = self.drop(key)
 
             val = self.form_value(features[i])
             val = self.drop(val)
